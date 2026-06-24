@@ -3,7 +3,7 @@ import { n as require_jsx_runtime, r as require_react } from "../_libs/react+tan
 import { g as require_react_dom } from "../_libs/@tanstack/react-router+[...].mjs";
 import { n as AnimatePresence, t as motion } from "../_libs/framer-motion.mjs";
 import { a as Pause, i as Play, n as VolumeX, r as Volume2, t as X } from "../_libs/lucide-react.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-CpPWGXJU.js
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-DfcRfhrW.js
 var import_react = /* @__PURE__ */ __toESM(require_react());
 var import_jsx_runtime = require_jsx_runtime();
 var import_react_dom = require_react_dom();
@@ -41,6 +41,41 @@ var reels = [
 		author: "@studio.os"
 	}
 ];
+function useResponsiveCardConfig() {
+	const [config, setConfig] = (0, import_react.useState)({
+		width: 248,
+		height: 440,
+		offset: 190,
+		containerHeight: 520
+	});
+	(0, import_react.useEffect)(() => {
+		const update = () => {
+			const w = window.innerWidth;
+			if (w < 640) setConfig({
+				width: 220,
+				height: 391,
+				offset: 140,
+				containerHeight: 410
+			});
+			else if (w < 1024) setConfig({
+				width: 260,
+				height: 462,
+				offset: 165,
+				containerHeight: 480
+			});
+			else setConfig({
+				width: 248,
+				height: 440,
+				offset: 190,
+				containerHeight: 520
+			});
+		};
+		update();
+		window.addEventListener("resize", update);
+		return () => window.removeEventListener("resize", update);
+	}, []);
+	return config;
+}
 function getPosition(idx, activeIndex, total) {
 	if (idx === activeIndex) return 0;
 	if (idx === (activeIndex - 1 + total) % total) return -1;
@@ -49,9 +84,13 @@ function getPosition(idx, activeIndex, total) {
 }
 function HeroReelCarousel({ reels, activeIndex, progress, reduced, onNext, onPrev, onCenterClick }) {
 	const total = reels.length;
+	const cardConfig = useResponsiveCardConfig();
 	return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
-		className: "relative flex h-[460px] w-full items-center justify-center sm:h-[520px]",
-		style: { perspective: "1200px" },
+		className: "relative flex w-full items-center justify-center",
+		style: {
+			height: cardConfig.containerHeight,
+			perspective: "1200px"
+		},
 		children: reels.map((reel, idx) => {
 			const pos = getPosition(idx, activeIndex, total);
 			if (pos === null) return null;
@@ -61,6 +100,9 @@ function HeroReelCarousel({ reels, activeIndex, progress, reduced, onNext, onPre
 				isCenter: pos === 0,
 				progress,
 				reduced,
+				cardWidth: cardConfig.width,
+				cardHeight: cardConfig.height,
+				offset: cardConfig.offset,
 				onClick: () => {
 					if (pos === -1) onPrev();
 					else if (pos === 1) onNext();
@@ -70,12 +112,12 @@ function HeroReelCarousel({ reels, activeIndex, progress, reduced, onNext, onPre
 		})
 	});
 }
-var ReelCardVideo = (0, import_react.memo)(function ReelCardVideo({ reel, pos, isCenter, progress, reduced, onClick }) {
+var ReelCardVideo = (0, import_react.memo)(function ReelCardVideo({ reel, pos, isCenter, progress, reduced, cardWidth, cardHeight, offset, onClick }) {
 	const videoRef = (0, import_react.useRef)(null);
 	(0, import_react.useEffect)(() => {
 		videoRef.current?.play().catch(() => {});
 	}, []);
-	const translateX = pos * 190;
+	const translateX = pos * offset;
 	const scale = isCenter ? 1 : .95;
 	const blur = isCenter ? 0 : 2;
 	const opacity = isCenter ? 1 : .8;
@@ -86,8 +128,8 @@ var ReelCardVideo = (0, import_react.memo)(function ReelCardVideo({ reel, pos, i
 		"aria-hidden": !isCenter,
 		className: "absolute overflow-hidden rounded-[22px] text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#19c6e6] focus-visible:ring-offset-2",
 		style: {
-			width: 248,
-			height: 440,
+			width: cardWidth,
+			height: cardHeight,
 			zIndex: isCenter ? 30 : 10,
 			cursor: isCenter ? "pointer" : "pointer"
 		},
@@ -348,26 +390,25 @@ function usePrefersReducedMotion() {
 function LiveReels() {
 	const reduced = usePrefersReducedMotion();
 	const [index, setIndex] = (0, import_react.useState)(0);
-	const [paused, setPaused] = (0, import_react.useState)(false);
 	const total = reels.length;
 	const [modalOpen, setModalOpen] = (0, import_react.useState)(false);
 	const [modalVideo, setModalVideo] = (0, import_react.useState)("");
 	const [progress, setProgress] = (0, import_react.useState)(0);
 	const rafRef = (0, import_react.useRef)(null);
-	const pausedRef = (0, import_react.useRef)(paused);
-	pausedRef.current = paused;
-	const reducedRef = (0, import_react.useRef)(reduced);
-	reducedRef.current = reduced;
 	const intervalRef = (0, import_react.useRef)(void 0);
 	(0, import_react.useEffect)(() => {
-		intervalRef.current = setInterval(() => {
-			if (!pausedRef.current && !reducedRef.current) {
-				setIndex((prev) => (prev + 1) % total);
-				setProgress(0);
-			}
+		const interval = setInterval(() => {
+			console.log("Auto slide running");
+			setIndex((prev) => {
+				const next = (prev + 1) % reels.length;
+				console.log("Current reel:", next);
+				return next;
+			});
+			setProgress(0);
 		}, 6e3);
-		return () => clearInterval(intervalRef.current);
-	}, [total]);
+		intervalRef.current = interval;
+		return () => clearInterval(interval);
+	}, []);
 	(0, import_react.useEffect)(() => {
 		if (reduced) {
 			setProgress(1);
@@ -386,12 +427,15 @@ function LiveReels() {
 	const restartInterval = (0, import_react.useCallback)(() => {
 		if (intervalRef.current) clearInterval(intervalRef.current);
 		intervalRef.current = setInterval(() => {
-			if (!pausedRef.current && !reducedRef.current) {
-				setIndex((prev) => (prev + 1) % total);
-				setProgress(0);
-			}
+			console.log("Auto slide running");
+			setIndex((prev) => {
+				const next = (prev + 1) % reels.length;
+				console.log("Current reel:", next);
+				return next;
+			});
+			setProgress(0);
 		}, 6e3);
-	}, [total]);
+	}, []);
 	const openModal = (0, import_react.useCallback)((reelIndex) => {
 		setModalVideo(reels[reelIndex].video);
 		setModalOpen(true);
@@ -417,7 +461,7 @@ function LiveReels() {
 		},
 		children: [
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
-				className: "relative mx-auto grid w-full max-w-[1240px] grid-cols-1 items-center gap-12 px-6 py-24 lg:grid-cols-2 lg:gap-16 lg:py-32",
+				className: "relative mx-auto grid w-full max-w-[1240px] grid-cols-1 items-center gap-12 px-6 py-16 sm:py-24 lg:grid-cols-2 lg:gap-16 lg:py-32",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "order-1",
 					children: [
@@ -494,8 +538,6 @@ function LiveReels() {
 					]
 				}), /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("div", {
 					className: "order-2 flex flex-col items-center",
-					onMouseEnter: () => setPaused(true),
-					onMouseLeave: () => setPaused(false),
 					children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)(HeroReelCarousel, {
 						reels,
 						activeIndex: index,

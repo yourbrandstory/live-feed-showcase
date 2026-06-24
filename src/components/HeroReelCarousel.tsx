@@ -1,6 +1,40 @@
-import { useRef, useEffect, memo } from "react";
+import { useRef, useEffect, memo, useState } from "react";
 import { motion } from "framer-motion";
 import type { ReelItem } from "@/data/reels";
+
+interface CardConfig {
+  width: number;
+  height: number;
+  offset: number;
+  containerHeight: number;
+}
+
+function useResponsiveCardConfig(): CardConfig {
+  const [config, setConfig] = useState<CardConfig>({
+    width: 248,
+    height: 440,
+    offset: 190,
+    containerHeight: 520,
+  });
+
+  useEffect(() => {
+    const update = () => {
+      const w = window.innerWidth;
+      if (w < 640) {
+        setConfig({ width: 220, height: 391, offset: 140, containerHeight: 410 });
+      } else if (w < 1024) {
+        setConfig({ width: 260, height: 462, offset: 165, containerHeight: 480 });
+      } else {
+        setConfig({ width: 248, height: 440, offset: 190, containerHeight: 520 });
+      }
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  return config;
+}
 
 interface HeroReelCarouselProps {
   reels: ReelItem[];
@@ -29,11 +63,12 @@ export function HeroReelCarousel({
   onCenterClick,
 }: HeroReelCarouselProps) {
   const total = reels.length;
+  const cardConfig = useResponsiveCardConfig();
 
   return (
     <div
-      className="relative flex h-[460px] w-full items-center justify-center sm:h-[520px]"
-      style={{ perspective: "1200px" }}
+      className="relative flex w-full items-center justify-center"
+      style={{ height: cardConfig.containerHeight, perspective: "1200px" }}
     >
       {reels.map((reel, idx) => {
         const pos = getPosition(idx, activeIndex, total);
@@ -46,6 +81,9 @@ export function HeroReelCarousel({
             isCenter={pos === 0}
             progress={progress}
             reduced={reduced}
+            cardWidth={cardConfig.width}
+            cardHeight={cardConfig.height}
+            offset={cardConfig.offset}
             onClick={() => {
               if (pos === -1) onPrev();
               else if (pos === 1) onNext();
@@ -64,6 +102,9 @@ const ReelCardVideo = memo(function ReelCardVideo({
   isCenter,
   progress,
   reduced,
+  cardWidth,
+  cardHeight,
+  offset,
   onClick,
 }: {
   reel: ReelItem;
@@ -71,6 +112,9 @@ const ReelCardVideo = memo(function ReelCardVideo({
   isCenter: boolean;
   progress: number;
   reduced: boolean;
+  cardWidth: number;
+  cardHeight: number;
+  offset: number;
   onClick: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -79,7 +123,7 @@ const ReelCardVideo = memo(function ReelCardVideo({
     videoRef.current?.play().catch(() => {});
   }, []);
 
-  const translateX = pos * 190;
+  const translateX = pos * offset;
   const scale = isCenter ? 1 : 0.95;
   const blur = isCenter ? 0 : 2;
   const opacity = isCenter ? 1 : 0.8;
@@ -92,8 +136,8 @@ const ReelCardVideo = memo(function ReelCardVideo({
       aria-hidden={!isCenter}
       className="absolute overflow-hidden rounded-[22px] text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#19c6e6] focus-visible:ring-offset-2"
       style={{
-        width: 248,
-        height: 440,
+        width: cardWidth,
+        height: cardHeight,
         zIndex: isCenter ? 30 : 10,
         cursor: isCenter ? "pointer" : "pointer",
       }}

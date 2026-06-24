@@ -19,7 +19,6 @@ function usePrefersReducedMotion() {
 export function LiveReels() {
   const reduced = usePrefersReducedMotion();
   const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
   const total = reels.length;
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -28,21 +27,21 @@ export function LiveReels() {
   const [progress, setProgress] = useState(0);
   const rafRef = useRef<number | null>(null);
 
-  const pausedRef = useRef(paused);
-  pausedRef.current = paused;
-  const reducedRef = useRef(reduced);
-  reducedRef.current = reduced;
   const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      if (!pausedRef.current && !reducedRef.current) {
-        setIndex((prev) => (prev + 1) % total);
-        setProgress(0);
-      }
+    const interval = setInterval(() => {
+      console.log("Auto slide running");
+      setIndex((prev) => {
+        const next = (prev + 1) % reels.length;
+        console.log("Current reel:", next);
+        return next;
+      });
+      setProgress(0);
     }, 6000);
-    return () => clearInterval(intervalRef.current);
-  }, [total]);
+    intervalRef.current = interval;
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (reduced) {
@@ -64,12 +63,15 @@ export function LiveReels() {
   const restartInterval = useCallback(() => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     intervalRef.current = setInterval(() => {
-      if (!pausedRef.current && !reducedRef.current) {
-        setIndex((prev) => (prev + 1) % total);
-        setProgress(0);
-      }
+      console.log("Auto slide running");
+      setIndex((prev) => {
+        const next = (prev + 1) % reels.length;
+        console.log("Current reel:", next);
+        return next;
+      });
+      setProgress(0);
     }, 6000);
-  }, [total]);
+  }, []);
 
   const openModal = useCallback((reelIndex: number) => {
     setModalVideo(reels[reelIndex].video);
@@ -101,7 +103,7 @@ export function LiveReels() {
         backgroundSize: "44px 44px",
       }}
     >
-      <div className="relative mx-auto grid w-full max-w-[1240px] grid-cols-1 items-center gap-12 px-6 py-24 lg:grid-cols-2 lg:gap-16 lg:py-32">
+      <div className="relative mx-auto grid w-full max-w-[1240px] grid-cols-1 items-center gap-12 px-6 py-16 sm:py-24 lg:grid-cols-2 lg:gap-16 lg:py-32">
         <div className="order-1">
           <span className="inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3 py-1 text-xs font-medium tracking-wide text-neutral-700 backdrop-blur">
             <span
@@ -167,11 +169,7 @@ export function LiveReels() {
           </p>
         </div>
 
-        <div
-          className="order-2 flex flex-col items-center"
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
-        >
+        <div className="order-2 flex flex-col items-center">
           <HeroReelCarousel
             reels={reels}
             activeIndex={index}
